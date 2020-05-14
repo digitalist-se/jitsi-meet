@@ -356,6 +356,7 @@ class ConferenceConnector {
         }
 
         case JitsiConferenceErrors.FOCUS_LEFT:
+        case JitsiConferenceErrors.ICE_FAILED:
         case JitsiConferenceErrors.VIDEOBRIDGE_NOT_AVAILABLE:
         case JitsiConferenceErrors.OFFER_ANSWER_FAILED:
             APP.store.dispatch(conferenceWillLeave(room));
@@ -2093,6 +2094,7 @@ export default {
                 logger.info(`My role changed, new role: ${role}`);
 
                 APP.store.dispatch(localParticipantRoleChanged(role));
+                APP.API.notifyUserRoleChanged(id, role);
             } else {
                 APP.store.dispatch(participantRoleChanged(id, role));
             }
