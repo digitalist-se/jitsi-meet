@@ -71,12 +71,24 @@ class LobbyScreen extends AbstractLobbyScreen {
     }
 
     /**
+     * Renders the participant form to let the knocking participant enter its details.
+     *
+     * NOTE: We don't use edit action on web since the prejoin functionality got merged.
+     * Mobile won't use it either once prejoin gets implemented there too.
+     *
+     * @inheritdoc
+     */
+    _renderParticipantForm() {
+        return this._renderParticipantInfo();
+    }
+
+    /**
      * Renders the participant info fragment when we have all the required details of the user.
      *
      * @inheritdoc
      */
     _renderParticipantInfo() {
-        const { displayName, email } = this.state;
+        const { displayName } = this.state;
         const { t } = this.props;
 
         return (
@@ -85,12 +97,8 @@ class LobbyScreen extends AbstractLobbyScreen {
                     <InputField
                         onChange = { this._onChangeDisplayName }
                         placeHolder = { t('lobby.nameField') }
+                        testId = 'lobby.nameField'
                         value = { displayName } />
-
-                    <InputField
-                        onChange = { this._onChangeEmail }
-                        placeHolder = { t('lobby.emailField') }
-                        value = { email } />
                 </div>
             </div>
         );
@@ -110,6 +118,7 @@ class LobbyScreen extends AbstractLobbyScreen {
                     className = { _passwordJoinFailed ? 'error' : '' }
                     onChange = { this._onChangePassword }
                     placeHolder = { _passwordJoinFailed ? t('lobby.invalidPassword') : t('lobby.passwordField') }
+                    testId = 'lobby.password'
                     type = 'password'
                     value = { this.state.password } />
             </div>
@@ -129,11 +138,13 @@ class LobbyScreen extends AbstractLobbyScreen {
                 <ActionButton
                     disabled = { !this.state.password }
                     onClick = { this._onJoinWithPassword }
+                    testId = 'lobby.passwordJoinButton'
                     type = 'primary'>
                     { t('lobby.passwordJoinButton') }
                 </ActionButton>
                 <ActionButton
                     onClick = { this._onSwitchToKnockMode }
+                    testId = 'lobby.backToKnockModeButton'
                     type = 'secondary'>
                     { t('lobby.backToKnockModeButton') }
                 </ActionButton>
@@ -154,11 +165,13 @@ class LobbyScreen extends AbstractLobbyScreen {
                 { _knocking || <ActionButton
                     disabled = { !this.state.displayName }
                     onClick = { this._onAskToJoin }
+                    testId = 'lobby.knockButton'
                     type = 'primary'>
                     { t('lobby.knockButton') }
                 </ActionButton> }
                 <ActionButton
                     onClick = { this._onSwitchToPasswordMode }
+                    testId = 'lobby.enterPasswordButton'
                     type = 'secondary'>
                     { t('lobby.enterPasswordButton') }
                 </ActionButton>

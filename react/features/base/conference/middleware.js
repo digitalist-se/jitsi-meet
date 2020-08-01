@@ -16,6 +16,7 @@ import {
     getLocalParticipant,
     getParticipantById,
     getPinnedParticipant,
+    PARTICIPANT_ROLE,
     PARTICIPANT_UPDATED,
     PIN_PARTICIPANT
 } from '../participants';
@@ -116,14 +117,15 @@ StateListenerRegistry.register(
             maxReceiverVideoQuality,
             preferredVideoQuality
         } = currentState;
+        const changedConference = conference !== previousState.conference;
         const changedPreferredVideoQuality
             = preferredVideoQuality !== previousState.preferredVideoQuality;
         const changedMaxVideoQuality = maxReceiverVideoQuality !== previousState.maxReceiverVideoQuality;
 
-        if (changedPreferredVideoQuality || changedMaxVideoQuality) {
+        if (changedConference || changedPreferredVideoQuality || changedMaxVideoQuality) {
             _setReceiverVideoConstraint(conference, preferredVideoQuality, maxReceiverVideoQuality);
         }
-        if (changedPreferredVideoQuality) {
+        if (changedConference || changedPreferredVideoQuality) {
             _setSenderVideoConstraint(conference, preferredVideoQuality);
         }
     });
@@ -459,7 +461,10 @@ function _sendTones({ getState }, next, action) {
  */
 function _setReceiverVideoConstraint(conference, preferred, max) {
     if (conference) {
-        conference.setReceiverVideoConstraint(Math.min(preferred, max));
+        const value = Math.min(preferred, max);
+
+        conference.setReceiverVideoConstraint(value);
+        logger.info(`setReceiverVideoConstraint: ${value}`);
     }
 }
 
@@ -602,13 +607,27 @@ function _trackAddedOrRemoved(store, next, action) {
  * @private
  * @returns {Object} The value returned by {@code next(action)}.
  */
-function _updateLocalParticipantInConference({ getState }, next, action) {
+function _updateLocalParticipantInConference({ dispatch, getState }, next, action) {
     const { conference } = getState()['features/base/conference'];
     const { participant } = action;
     const result = next(action);
 
-    if (conference && participant.local && 'name' in participant) {
-        conference.setDisplayName(participant.name);
+    const localParticipant = getLocalParticipant(getState);
+
+    if (conference && participant.id === localParticipant.id) {
+        if ('name' in participant) {
+            conference.setDisplayName(participant.name);
+        }
+
+        if ('role' in participant && participant.role === PARTICIPANT_ROLE.MODERATOR) {
+            const { pendingSubjectChange, subject } = getState()['features/base/conference'];
+
+            // When the local user role is updated to moderator and we have a pending subject change
+            // which was not reflected we need to set it (the first time we tried was before becoming moderator).
+            if (pendingSubjectChange !== subject) {
+                dispatch(setSubject(pendingSubjectChange));
+            }
+        }
     }
 
     return result;
