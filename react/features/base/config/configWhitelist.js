@@ -15,8 +15,7 @@ export default [
     'abTesting',
     'analytics.disabled',
     'audioLevelsInterval',
-    'autoRecord',
-    'autoRecordToken',
+    'apiLogLevels',
     'avgRtpStatsN',
 
     /**
@@ -69,6 +68,7 @@ export default [
 
     'channelLastN',
     'constraints',
+    'brandingRoomAlias',
     'debug',
     'debugAudioLevels',
     'defaultLanguage',
@@ -100,12 +100,14 @@ export default [
     'enableInsecureRoomNameWarning',
     'enableLayerSuspension',
     'enableLipSync',
+    'enableOpusRed',
     'enableRemb',
     'enableScreenshotCapture',
     'enableTalkWhileMuted',
     'enableNoAudioDetection',
     'enableNoisyMicDetection',
     'enableTcc',
+    'enableAutomaticUrlCopy',
     'etherpad_base',
     'failICE',
     'feedbackPercentage',
@@ -115,6 +117,7 @@ export default [
     'gatherStats',
     'googleApiApplicationClientID',
     'hiddenDomain',
+    'hideLobbyButton',
     'hosts',
     'iAmRecorder',
     'iAmSipGateway',
@@ -122,6 +125,7 @@ export default [
     'ignoreStartMuted',
     'liveStreamingEnabled',
     'localRecording',
+    'maxFullResolutionParticipants',
     'minParticipants',
     'nick',
     'openBridgeChannel',
@@ -147,6 +151,7 @@ export default [
     'testing',
     'useStunTurn',
     'useTurnUdp',
+    'videoQuality.persist',
     'webrtcIceTcpDisable',
     'webrtcIceUdpDisable'
 ].concat(extraConfigWhitelist);
