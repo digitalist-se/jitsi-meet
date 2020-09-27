@@ -13,10 +13,12 @@ import { URI_PROTOCOL_PATTERN } from '../base/util';
 export function _openDesktopApp(state: Object) { // eslint-disable-line no-unused-vars
 
     const desktopScheme = interfaceConfig.DESKTOP_APP_SCHEME || 'jitsi-meet';
-    const regex = new RegExp(URI_PROTOCOL_PATTERN, 'gi');
-    const { href } = window.location;
+    const { room } = state['features/base/conference'];
 
-    window.location = href.replace(regex, `${desktopScheme}:`);
+    // const regex = new RegExp(URI_PROTOCOL_PATTERN, 'gi');
+    // const { href } = window.location;
+
+    window.location = `${desktopScheme}://${room}`;
 
     return Promise.resolve(true);
 
