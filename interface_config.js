@@ -50,6 +50,11 @@ var interfaceConfig = {
     DEFAULT_REMOTE_DISPLAY_NAME: 'Fellow Jitster',
     DEFAULT_WELCOME_PAGE_LOGO_URL: 'images/watermark.png',
 
+    /**
+     * Custom protocol for opening the Desktop app, if installed
+     */
+    DESKTOP_APP_SCHEME: 'digimeet',
+
     DISABLE_DOMINANT_SPEAKER_INDICATOR: false,
 
     DISABLE_FOCUS_INDICATOR: false,
@@ -222,6 +227,8 @@ var interfaceConfig = {
      * @type {boolean}
      */
     VIDEO_QUALITY_LABEL_DISABLED: false,
+
+
 
     /**
      * When enabled, the kick participant button will not be presented for users without a JWT

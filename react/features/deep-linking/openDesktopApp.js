@@ -1,4 +1,7 @@
+/* global interfaceConfig */
 // @flow
+
+import { URI_PROTOCOL_PATTERN } from '../base/util';
 
 /**
  * Opens the desktop app.
@@ -8,5 +11,13 @@
  * with false otherwise.
  */
 export function _openDesktopApp(state: Object) { // eslint-disable-line no-unused-vars
-    return Promise.resolve(false);
+
+    const desktopScheme = interfaceConfig.DESKTOP_APP_SCHEME || 'jitsi-meet';
+    const regex = new RegExp(URI_PROTOCOL_PATTERN, 'gi');
+    const { href } = window.location;
+
+    window.location = href.replace(regex, `${desktopScheme}:`);
+
+    return Promise.resolve(true);
+
 }

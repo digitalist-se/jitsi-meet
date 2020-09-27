@@ -38,8 +38,15 @@ export function generateDeepLinkingURL() {
         return `intent://${url}#Intent;scheme=${appScheme};package=${pkg};end`;
     }
 
-    // iOS: Replace the protocol part with the app scheme.
-    return href.replace(regex, `${appScheme}:`);
+    if (Platform.OS === 'ios') {
+        // iOS: Replace the protocol part with the app scheme.
+        return href.replace(regex, `${appScheme}:`);
+    }
+
+    const desktopAppScheme = interfaceConfig.DESKTOP_APP_SCHEME || 'jitsi-meet';
+
+    // Web: replace the protocol part with the desktop app scheme
+    return href.replace(regex, `${desktopAppScheme}:`);
 }
 
 /**
