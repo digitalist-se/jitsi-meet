@@ -82,6 +82,12 @@ export function shouldDisplayTileView(state: Object = {}) {
         return false;
     }
 
+    const { disableTileView } = state['features/base/config'];
+
+    if (disableTileView) {
+        return false;
+    }
+
     const { tileViewEnabled } = state['features/video-layout'];
 
     if (tileViewEnabled !== undefined) {
@@ -89,6 +95,8 @@ export function shouldDisplayTileView(state: Object = {}) {
         // do that.
         return tileViewEnabled;
     }
+
+    const { iAmRecorder } = state['features/base/config'];
 
     // None tile view mode is easier to calculate (no need for many negations), so we do
     // that and negate it only once.
@@ -99,9 +107,6 @@ export function shouldDisplayTileView(state: Object = {}) {
         // Editing etherpad
         state['features/etherpad']?.editing
 
-        // We're in filmstrip-only mode
-        || (typeof interfaceConfig === 'object' && interfaceConfig?.filmStripOnly)
-
         // We pinned a participant
         || getPinnedParticipant(state)
 
@@ -110,6 +115,9 @@ export function shouldDisplayTileView(state: Object = {}) {
 
         // There is a shared YouTube video in the meeting
         || isYoutubeVideoPlaying(state)
+
+        // We want jibri to use stage view by default
+        || iAmRecorder
     );
 
     return !shouldDisplayNormalMode;

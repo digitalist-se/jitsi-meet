@@ -19,7 +19,6 @@ import {
 import { MiddlewareRegistry, StateListenerRegistry } from '../base/redux';
 import { playSound, registerSound, unregisterSound } from '../base/sounds';
 import { showToolbox } from '../toolbox/actions';
-import { isButtonEnabled } from '../toolbox/functions';
 
 import { SEND_MESSAGE, SET_PRIVATE_MESSAGE_RECIPIENT } from './actionTypes';
 import { addMessage, clearMessages, toggleChat } from './actions';
@@ -152,22 +151,18 @@ StateListenerRegistry.register(
  * @returns {void}
  */
 function _addChatMsgListener(conference, store) {
-    if ((typeof interfaceConfig === 'object' && interfaceConfig.filmStripOnly)
-        || (typeof APP !== 'undefined' && !isButtonEnabled('chat'))
-        || store.getState()['features/base/config'].iAmRecorder) {
-        // We don't register anything on web if we're in filmStripOnly mode, or
-        // the chat button is not enabled in interfaceConfig.
-        // or we are in iAmRecorder mode
+
+    if (store.getState()['features/base/config'].iAmRecorder) {
+        // We don't register anything on web if we are in iAmRecorder mode
         return;
     }
 
     conference.on(
         JitsiConferenceEvents.MESSAGE_RECEIVED,
-        (id, message, timestamp, nick) => {
+        (id, message, timestamp) => {
             _handleReceivedMessage(store, {
                 id,
                 message,
-                nick,
                 privateMessage: false,
                 timestamp
             });
@@ -181,8 +176,7 @@ function _addChatMsgListener(conference, store) {
                 id,
                 message,
                 privateMessage: true,
-                timestamp,
-                nick: undefined
+                timestamp
             });
         }
     );
@@ -217,7 +211,7 @@ function _handleChatError({ dispatch }, error) {
  * @param {Object} message - The message object.
  * @returns {void}
  */
-function _handleReceivedMessage({ dispatch, getState }, { id, message, nick, privateMessage, timestamp }) {
+function _handleReceivedMessage({ dispatch, getState }, { id, message, privateMessage, timestamp }) {
     // Logic for all platforms:
     const state = getState();
     const { isOpen: isChatOpen } = state['features/chat'];
@@ -230,10 +224,9 @@ function _handleReceivedMessage({ dispatch, getState }, { id, message, nick, pri
     // backfilled for a participant that has left the conference.
     const participant = getParticipantById(state, id) || {};
     const localParticipant = getLocalParticipant(getState);
-    const displayName = participant.name || nick || getParticipantDisplayName(state, id);
+    const displayName = getParticipantDisplayName(state, id);
     const hasRead = participant.local || isChatOpen;
-    const timestampToDate = timestamp
-        ? new Date(timestamp) : new Date();
+    const timestampToDate = timestamp ? new Date(timestamp) : new Date();
     const millisecondsTimestamp = timestampToDate.getTime();
 
     dispatch(addMessage({

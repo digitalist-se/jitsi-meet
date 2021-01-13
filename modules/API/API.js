@@ -2,7 +2,6 @@
 
 import Logger from 'jitsi-meet-logger';
 
-import * as JitsiMeetConferenceEvents from '../../ConferenceEvents';
 import {
     createApiEvent,
     sendAnalytics
@@ -14,8 +13,9 @@ import {
     setSubject
 } from '../../react/features/base/conference';
 import { parseJWTFromURLParams } from '../../react/features/base/jwt';
-import { JitsiRecordingConstants } from '../../react/features/base/lib-jitsi-meet';
-import { pinParticipant } from '../../react/features/base/participants';
+import JitsiMeetJS, { JitsiRecordingConstants } from '../../react/features/base/lib-jitsi-meet';
+import { pinParticipant, getParticipantById } from '../../react/features/base/participants';
+import { setPrivateMessageRecipient } from '../../react/features/chat/actions';
 import {
     processExternalDeviceRequest
 } from '../../react/features/device-selection/functions';
@@ -45,14 +45,6 @@ declare var APP: Object;
  * List of the available commands.
  */
 let commands = {};
-
-/**
- * The state of screen sharing(started/stopped) before the screen sharing is
- * enabled and initialized.
- * NOTE: This flag help us to cache the state and use it if toggle-share-screen
- * was received before the initialization.
- */
-let initialScreenSharingState = false;
 
 /**
  * The transport instance used for communication with external apps.
@@ -339,6 +331,24 @@ function initCommands() {
             } else {
                 logger.error('No recording or streaming session found');
             }
+        },
+        'initiate-private-chat': participantId => {
+            const state = APP.store.getState();
+            const participant = getParticipantById(state, participantId);
+
+            if (participant) {
+                const { isOpen: isChatOpen } = state['features/chat'];
+
+                if (!isChatOpen) {
+                    APP.UI.toggleChat();
+                }
+                APP.store.dispatch(setPrivateMessageRecipient(participant));
+            } else {
+                logger.error('No participant found for the given participantId');
+            }
+        },
+        'cancel-private-chat': () => {
+            APP.store.dispatch(setPrivateMessageRecipient());
         }
     };
     transport.on('event', ({ data, name }) => {
@@ -422,25 +432,21 @@ function initCommands() {
         case 'is-sharing-screen':
             callback(Boolean(APP.conference.isSharingScreen));
             break;
+        case 'get-content-sharing-participants': {
+            const tracks = getState()['features/base/tracks'];
+            const sharingParticipantIds = tracks.filter(tr => tr.videoType === 'desktop').map(t => t.participantId);
+
+            callback({
+                sharingParticipantIds
+            });
+            break;
+        }
         default:
             return false;
         }
 
         return true;
     });
-}
-
-/**
- * Listens for desktop/screen sharing enabled events and toggles the screen
- * sharing if needed.
- *
- * @param {boolean} enabled - Current screen sharing enabled status.
- * @returns {void}
- */
-function onDesktopSharingEnabledChanged(enabled = false) {
-    if (enabled && initialScreenSharingState) {
-        toggleScreenSharing();
-    }
 }
 
 /**
@@ -470,12 +476,10 @@ function shouldBeEnabled() {
  * @returns {void}
  */
 function toggleScreenSharing(enable) {
-    if (APP.conference.isDesktopSharingEnabled) {
-
-        // eslint-disable-next-line no-empty-function
-        APP.conference.toggleScreenSharing(enable).catch(() => {});
-    } else {
-        initialScreenSharingState = !initialScreenSharingState;
+    if (JitsiMeetJS.isDesktopSharingEnabled()) {
+        APP.conference.toggleScreenSharing(enable).catch(() => {
+            logger.warn('Failed to toggle screen-sharing');
+        });
     }
 }
 
@@ -507,10 +511,6 @@ class API {
          * @type {boolean}
          */
         this._enabled = true;
-
-        APP.conference.addListener(
-            JitsiMeetConferenceEvents.DESKTOP_SHARING_ENABLED_CHANGED,
-            onDesktopSharingEnabledChanged);
 
         initCommands();
     }
@@ -680,6 +680,19 @@ class API {
     notifyEndpointTextMessageReceived(data: Object) {
         this._sendEvent({
             name: 'endpoint-text-message-received',
+            data
+        });
+    }
+
+    /**
+     * Notify external application (if API is enabled) that the list of sharing participants changed.
+     *
+     * @param {Object} data - The event data.
+     * @returns {void}
+     */
+    notifySharingParticipantsChanged(data: Object) {
+        this._sendEvent({
+            name: 'content-sharing-participants-changed',
             data
         });
     }
@@ -1051,6 +1064,21 @@ class API {
     }
 
     /**
+     * Notify external application (if API is enabled) that user updated their hand raised.
+     *
+     * @param {string} id - User id.
+     * @param {boolean} handRaised - Whether user has raised hand.
+     * @returns {void}
+     */
+    notifyRaiseHandUpdated(id: string, handRaised: boolean) {
+        this._sendEvent({
+            name: 'raise-hand-updated',
+            handRaised,
+            id
+        });
+    }
+
+    /**
      * Disposes the allocated resources.
      *
      * @returns {void}
@@ -1058,9 +1086,6 @@ class API {
     dispose() {
         if (this._enabled) {
             this._enabled = false;
-            APP.conference.removeListener(
-                JitsiMeetConferenceEvents.DESKTOP_SHARING_ENABLED_CHANGED,
-                onDesktopSharingEnabledChanged);
         }
     }
 }
